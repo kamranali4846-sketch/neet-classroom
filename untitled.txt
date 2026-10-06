@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEET Live Classroom</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#0b1020;color:white}
+header{padding:20px 6%;background:#111936;display:flex;justify-content:space-between;align-items:center}
+.live{background:#e53935;padding:8px 14px;border-radius:20px;font-size:14px;font-weight:bold}
+.wrap{max-width:1100px;margin:auto;padding:28px 6%}
+.player{background:#000;border-radius:15px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,0.5)}
+.screen{aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:20px;background:#000}
+.screen iframe{width:100%;height:100%;border:none}
+.note{padding:15px;background:#171f3d;color:#7dd3fc;font-weight:bold}
+
+.add-box{background:#151d39;padding:20px;border-radius:12px;margin:25px 0}
+.add-box h3{margin-top:0;color:#7dd3fc}
+.form-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+input, select{padding:12px;border-radius:8px;border:1px solid #26345f;background:#0b1020;color:white;font-size:14px;flex:1;min-width:180px}
+.add-btn{background:#22c55e;color:white;border:none;padding:12px 20px;border-radius:8px;font-weight:bold;cursor:pointer}
+.add-btn:hover{background:#16a34a}
+
+.subjects{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+button{padding:14px 22px;border:0;border-radius:10px;background:#26345f;color:white;font-size:16px;cursor:pointer;transition:0.2s}
+button:hover{background:#3b4f8a}
+.card{margin-top:12px;padding:18px;background:#151d39;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
+.card-info{flex:1}
+.tag{color:#7dd3fc;font-size:13px;font-weight:bold;text-transform:uppercase}
+.play-btn{padding:10px 18px;background:#e53935;color:white;border-radius:8px;font-size:14px;border:none;cursor:pointer}
+.play-btn:hover{background:#ff5252}
+.delete-btn{padding:10px 14px;background:#334155;color:#f87171;border-radius:8px;font-size:14px;border:none;cursor:pointer;margin-left:8px}
+footer{text-align:center;color:#8993b8;padding:30px}
+</style>
+</head>
+<body>
+
+<header>
+  <b>📚 NEET Live Classroom</b>
+  <span class="live">● LIVE</span>
+</header>
+
+<div class="wrap">
+  <h1 id="lecture-title">Live Lecture Room</h1>
+  
+  <div class="player">
+    <div class="screen" id="video-screen">
+      🎥 Select a lecture below to start playing
+    </div>
+    <div class="note" id="now-playing">Currently Playing: None</div>
+  </div>
+
+  <div class="add-box">
+    <h3>➕ Add New Lecture Link</h3>
+    <div class="form-group">
+      <select id="sub-select">
+        <option value="Physics">⚡ Physics</option>
+        <option value="Chemistry">🧪 Chemistry</option>
+        <option value="Biology">🧬 Biology</option>
+      </select>
+      <input type="text" id="chapter-title" placeholder="Chapter / Topic Name">
+      <input type="text" id="youtube-url" placeholder="Paste YouTube Link or Video ID">
+      <button class="add-btn" onclick="addNewLecture()">Add Lecture</button>
+    </div>
+  </div>
+
+  <h2>Subjects</h2>
+  <div class="subjects">
+    <button onclick="show('Physics')">⚡ Physics</button>
+    <button onclick="show('Chemistry')">🧪 Chemistry</button>
+    <button onclick="show('Biology')">🧬 Biology</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<footer>Only publish or restream lectures you have permission to use.</footer>
+
+<script>
+let currentSubject = 'Physics';
+
+// Default initial data
+const defaultLectures = {
+  Physics: [{ title: 'Electric Charges and Fields', videoId: '_oMIg50JLI8' }],
+  Chemistry: [{ title: 'Structure of Atom', videoId: '_oMIg50JLI8' }],
+  Biology: [{ title: 'Cell Cycle & Division', videoId: '_oMIg50JLI8' }]
+};
+
+// Load saved data from browser storage
+let lecturesData = JSON.parse(localStorage.getItem('neet_classroom_data')) || defaultLectures;
+
+function saveData() {
+  localStorage.setItem('neet_classroom_data', JSON.stringify(lecturesData));
+}
+
+function extractVideoID(url) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : url;
+}
+
+function addNewLecture() {
+  const subject = document.getElementById('sub-select').value;
+  const title = document.getElementById('chapter-title').value.trim();
+  const rawUrl = document.getElementById('youtube-url').value.trim();
+
+  if(!title || !rawUrl) {
+    alert("Kripya Title aur YouTube Link dono bharein!");
+    return;
+  }
+
+  const videoId = extractVideoID(rawUrl);
+  
+  if (!lecturesData[subject]) {
+    lecturesData[subject] = [];
+  }
+
+  lecturesData[subject].push({ title: title, videoId: videoId });
+  saveData();
+
+  document.getElementById('chapter-title').value = '';
+  document.getElementById('youtube-url').value = '';
+
+  alert('Lecture successfully add ho gaya hai!');
+  show(subject);
+}
+
+function deleteLecture(index) {
+  if (confirm("Kya aap is lecture ko delete karna chahte hain?")) {
+    lecturesData[currentSubject].splice(index, 1);
+    saveData();
+    show(currentSubject);
+  }
+}
+
+function show(subject) {
+  currentSubject = subject;
+  const listContainer = document.getElementById('list');
+  const items = lecturesData[subject] || [];
+  
+  if (items.length === 0) {
+    listContainer.innerHTML = '<p style="color:#aaa;">Is subject mein abhi koi lecture add nahi hai.</p>';
+    return;
+  }
+
+  listContainer.innerHTML = items.map((item, index) => `
+    <div class="card">
+      <div class="card-info">
+        <span class="tag">${subject}</span>
+        <h3 style="margin:5px 0;">${item.title}</h3>
+        <p style="margin:0;color:#aaa;font-size:14px;">Lecture ${index + 1}</p>
+      </div>
+      <div>
+        <button class="play-btn" onclick="playVideo('${item.videoId}', '${item.title}')">▶ Play</button>
+        <button class="delete-btn" onclick="deleteLecture(${index})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function playVideo(videoId, title) {
+  const screen = document.getElementById('video-screen');
+  const nowPlaying = document.getElementById('now-playing');
+  
+  screen.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  nowPlaying.innerText = `Currently Playing: ${title}`;
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+show('Physics');
+</script>
+
+</body>
+</html>
